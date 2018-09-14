@@ -2,18 +2,32 @@ package com.login;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.sql.*;
+import javax.servlet.http.HttpSession;
+import com.bean.EmployeeBean;
+import com.bean.ErrorObject;
+import com.util.DbUtil;
+import com.util.commonUtils;
+
+
 
 /**
  * Servlet implementation class LoginServ
  */
-@WebServlet("/LoginServ")
+
+@WebServlet(urlPatterns = { "/login" })
 public class LoginServ extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
@@ -31,39 +45,8 @@ public class LoginServ extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
 		response.getWriter().append("Served at: ").append(request.getContextPath());
-		/*System.out.println("In LoginServ");
-	    String driver = "com.mysql.jdbc.Driver";
-	    String url = "jdbc:mysql://localhost/login";
-	    response.setContentType("text/html");
-	    String msg = " ";
-	    String username = request.getParameter("email");
-	    String password = request.getParameter("password");
-	    System.out.println("Email is:"+username+"Password is"+password);
-	    
-	    try {
-	        Class.forName("com.mysql.jdbc.Driver");
-
-	        Connection conn=DriverManager.getConnection("jdbc:mysql://localhost:3306/login","root","");  
-
-	        String strQuery = "select * from validate WHERE username='"
-	                + username + "' and password='" + password + "'";
-	        Statement st = conn.createStatement();
-	        ResultSet rs = st.executeQuery(strQuery);
-	        if (rs.next()) {
-	            msg = "HELLO" + username + "! Your login is SUCESSFULL";
-
-	        } else {
-	            msg = "HELLO" + username + "!Your login is UNSUCESSFULL";
-	        }
-	        rs.close();
-	        st.close();
-	        System.out.println("test :" + msg);
-	        PrintWriter out = response.getWriter();
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }*/
-
-
+		 RequestDispatcher dispatcher = this.getServletContext().getRequestDispatcher("/login.jsp");
+		 dispatcher.forward(request, response);
 	}
 
 	/**
@@ -71,33 +54,59 @@ public class LoginServ extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		    response.setContentType("text/html");
-	        PrintWriter out = response.getWriter();
-	 
-	        String username = request.getParameter("email");
-	        String pass = request.getParameter("password");
-	        try {
-	            Class.forName("com.mysql.jdbc.Driver");
-	            Connection con = DriverManager.getConnection(
-	                    "jdbc:mysql://localhost:3306/emp_mgmt", "root", "root");
-	 
-	            PreparedStatement ps = con
-	                    .prepareStatement("insert into login values(?,?)");
-	 
-	            ps.setString(1, username);
-	            ps.setString(2, pass);
-	            
-	 
-	            int i = ps.executeUpdate();
-	            if (i > 0)
-	                out.print("You are successfully registered...");
-	 
-	        } catch (Exception e2) {
-	            System.out.println(e2);
+		    //response.setContentType("text/html");
+		String userName = request.getParameter("userName");
+		String password = request.getParameter("password");
+		String ip = request.getRemoteAddr();
+		boolean invalidUser = false;
+		System.out.println("UserName" + userName + "Password" + password + "IP" + ip);
+		if(userName != null && password != null){
+			EmployeeBean loginBean= new EmployeeBean();
+			loginBean.setUserName(userName);
+			loginBean.setPassword(password);
+			Connection con = DbUtil.createConnection();
+			EmployeeBean user=null;
+			try{
+				user=DbUtil.findUser((com.mysql.jdbc.Connection) con, userName, password, ip);
+				if(user == null){
+					System.out.println("User name or password invalid");
+					invalidUser=true;
+				}
+			}catch(SQLException e){
+				e.printStackTrace();
+                invalidUser = true;
+			}
+			//if email or password is invalid
+			if (invalidUser) {
+				String responseData = "{\"httpStatus\":\"ERROR_CODE_404\",\"errorMessage\":\"Incorrect username or password!\"}";
+				ErrorObject errObject=new ErrorObject();
+				errObject.setErrorMessage("UserName or Password is incorrect");
+	            user = new EmployeeBean();
+	            user.setUserName(userName);
+	            user.setPassword(password);
+	            /*response.setContentType("application/json");
+	            response.setCharacterEncoding("UTF-8"); // You want world domination, huh?
+	            response.getWriter().write(responseData);*/
+	            // Invalid user Forward to login.jsp
+	            RequestDispatcher dispatcher = this.getServletContext().getRequestDispatcher("/login.jsp");
+	            dispatcher.forward(request, response);
+			}
+			else {
+	            HttpSession session = request.getSession();
+	            commonUtils.LoginedUser(session, user);
+	            // Redirect to userInfo page.
+	            System.out.println(user.getRole());
+	            request.setAttribute("con", con);
+	            if(user.getRole().equalsIgnoreCase("ADMIN")){
+	            	response.sendRedirect(request.getContextPath() + "/admin");
+	            }else if(user.getRole().equals("SUPER_EMPLOYEE")){
+	            	response.sendRedirect(request.getContextPath() + "/superEmployee");
+	            }else if(user.getRole().equals("EMPLOYEE")){
+	            	response.sendRedirect(request.getContextPath() + "/employee");
+	            }
 	        }
-	 
-	        out.close();
 	    }
 	}
+}
 
 
