@@ -57,7 +57,7 @@ System.out.println(userName);
     }
     
     public static EmployeeBean findEmployee(Connection conn, String userName) throws SQLException {
-        String sql = "Select userName, password, id from loginuser  where userName=?";
+        String sql = "Select userName, password, loginid from loginuser  where userName=?";
  
         PreparedStatement pstm = conn.prepareStatement(sql);
         pstm.setString(1, userName);
@@ -68,7 +68,7 @@ System.out.println(userName);
         	EmployeeBean employee = new EmployeeBean();
             employee.setUserName(rs.getString("userName"));
             employee.setPassword(rs.getString("password"));//(CryptoghraphyUtil.decrypt(rs.getString("password")));
-            employee.setId(rs.getInt("id"));
+            employee.setId(rs.getInt("loginid"));
             return employee;
         }
         return null;

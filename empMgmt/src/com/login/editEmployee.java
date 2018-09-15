@@ -38,7 +38,7 @@ public class editEmployee extends HttpServlet {
 		 Connection conn = DbUtil.createConnection();
 		 
 	        String userName = (String) request.getParameter("userName");
-	 
+	        String password = (String)request.getParameter("password");
 	        EmployeeBean emp=null;       
 	 
 	        try {
@@ -54,7 +54,7 @@ public class editEmployee extends HttpServlet {
 	        }
 	        request.setAttribute("user", emp);
 	        RequestDispatcher dispatcher = request.getServletContext()
-	                .getRequestDispatcher("editEmpView.jsp");
+	                .getRequestDispatcher("/editEmpView.jsp");
 	        dispatcher.forward(request, response);
 	}
 
