@@ -10,9 +10,6 @@ import javax.servlet.http.HttpSession;
 import com.bean.EmployeeBean;
 import com.bean.EmployeeDetailsBean;
 
-
-
-
 public class commonUtils {
 	public static final String ATT_CONNECTION = "ATTRIBUTE_FOR_CONNECTION";
 	
@@ -41,7 +38,7 @@ public class commonUtils {
     public static EmployeeDetailsBean searchEmployee(Connection conn, String userName) throws SQLException {
 System.out.println(userName);
     	
-    	String sql = "Select userName, department, salary, id from employeeDetails where userName = ?";
+    	String sql = "Select userName, department, salary, id from employeedetails where userName = ?";
  
         PreparedStatement pstm = conn.prepareStatement(sql);
         pstm.setString(1, userName);
@@ -50,12 +47,30 @@ System.out.println(userName);
         EmployeeDetailsBean employeeDetailsBean =new EmployeeDetailsBean();
         System.out.println("Before Setting Employee Details value");
         while (rs.next()) {
-        	employeeDetailsBean.setUserName("userName");
-        	employeeDetailsBean.setRole("role");
-        	employeeDetailsBean.setSalary("salary");
-        	employeeDetailsBean.setId("id");
+        	employeeDetailsBean.setUserName(rs.getString("userName"));
+        	//employeeDetailsBean.setRole(rs.getString("role"));
+        	employeeDetailsBean.setSalary(rs.getString("salary"));
+        	employeeDetailsBean.setId(rs.getString("id"));
         }
         System.out.println("Set Employee Details");
         return employeeDetailsBean;
+    }
+    
+    public static EmployeeBean findEmployee(Connection conn, String userName) throws SQLException {
+        String sql = "Select userName, password, id from loginuser  where userName=?";
+ 
+        PreparedStatement pstm = conn.prepareStatement(sql);
+        pstm.setString(1, userName);
+ 
+        ResultSet rs = pstm.executeQuery();
+ 
+        while (rs.next()) {
+        	EmployeeBean employee = new EmployeeBean();
+            employee.setUserName(rs.getString("userName"));
+            employee.setPassword(rs.getString("password"));//(CryptoghraphyUtil.decrypt(rs.getString("password")));
+            employee.setId(rs.getInt("id"));
+            return employee;
+        }
+        return null;
     }
 }
